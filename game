@@ -1,0 +1,809 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same Opportunities</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 15px;
+  background: #29223f;
+  font-family: monospace;
+  color: #30243f;
+}
+
+#game {
+  max-width: 760px;
+  margin: auto;
+  background: #fff0df;
+  border: 5px solid white;
+  box-shadow: 0 0 0 5px #8e719c;
+}
+
+#title {
+  padding: 18px;
+  text-align: center;
+  background: #49385f;
+  color: white;
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+#scene {
+  height: 350px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(#a5cce3 0 65%, #87a987 65%);
+  transition: background .4s;
+}
+
+#scene.classroom {
+  background: linear-gradient(#e8d8c6 0 75%, #987e72 75%);
+}
+
+#scene.science {
+  background: linear-gradient(#b6d8d8 0 75%, #789b9c 75%);
+}
+
+#scene.art {
+  background: linear-gradient(#e9c6d2 0 75%, #a783a5 75%);
+}
+
+#scene.sports {
+  background: linear-gradient(#b7d9a7 0 75%, #628b64 75%);
+}
+
+#scene.council {
+  background: linear-gradient(#c6b9dc 0 75%, #88749f 75%);
+}
+
+#backgroundObjects {
+  position: absolute;
+  inset: 0;
+}
+
+#school {
+  position: absolute;
+  bottom: 40px;
+  left: 12%;
+  width: 76%;
+  height: 145px;
+  background: #d99b9c;
+  border: 6px solid #70536e;
+}
+
+#roof {
+  position: absolute;
+  top: -42px;
+  left: -6px;
+  width: calc(100% + 12px);
+  height: 42px;
+  background: #70536e;
+  clip-path: polygon(50% 0,100% 100%,0 100%);
+}
+
+.window {
+  position: absolute;
+  top: 35px;
+  width: 42px;
+  height: 50px;
+  background: #a5d9e6;
+  border: 5px solid #fff0df;
+}
+
+.left { left: 12%; }
+.right { right: 12%; }
+
+#door {
+  position: absolute;
+  bottom: 0;
+  left: 43%;
+  width: 16%;
+  height: 65px;
+  background: #76536e;
+  border: 4px solid #fff0df;
+}
+
+#characters {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 270px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 18px;
+  z-index: 5;
+}
+
+.person {
+  width: 145px;
+  height: 250px;
+  transition: transform .2s;
+  filter: drop-shadow(4px 5px #34243d55);
+}
+
+.person.active {
+  transform: translateY(-8px);
+}
+
+.person svg {
+  width: 100%;
+  height: 100%;
+  shape-rendering: crispEdges;
+}
+
+#location {
+  position: absolute;
+  z-index: 8;
+  top: 12px;
+  left: 12px;
+  background: #49385fdd;
+  color: white;
+  padding: 8px 10px;
+  font-size: 10px;
+}
+
+#dialogue {
+  background: #fff0df;
+  padding: 17px;
+  min-height: 190px;
+  border-top: 5px solid #49385f;
+}
+
+#speaker {
+  color: #a34f7b;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 9px;
+}
+
+#text {
+  font-size: 17px;
+  line-height: 1.5;
+  min-height: 60px;
+}
+
+#choices { margin-top: 15px; }
+
+button {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  margin: 10px 0;
+  background: #c6b1e4;
+  color: #30243f;
+  border: 3px solid #49385f;
+  font-family: monospace;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover { background: #f3b6d0; }
+
+input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 3px solid #49385f;
+}
+
+#menu {
+  text-align: center;
+  padding: 30px 15px;
+  background: #f7dce7;
+}
+
+#menu h2 { color: #a34f7b; }
+
+.hidden { display: none !important; }
+
+@media(max-width:500px) {
+  #scene { height: 310px; }
+  .person { width: 115px; height: 220px; }
+  #characters { gap: 4px; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="title">SAME<br>OPPORTUNITIES</div>
+
+<div id="menu">
+  <h2>A VISUAL NOVEL</h2>
+  <p>A story about friendship, school, and equality.</p>
+  <button onclick="startGame()">NEW GAME</button>
+  <button onclick="credits()">CREDITS</button>
+</div>
+
+<div id="scene" class="hidden">
+  <div id="location">SCHOOL ENTRANCE</div>
+  <div id="backgroundObjects"></div>
+  <div id="characters"></div>
+</div>
+
+<div id="dialogue" class="hidden">
+  <div id="speaker">Narrator</div>
+  <div id="text"></div>
+  <div id="choices"></div>
+</div>
+
+</div>
+
+<script>
+
+// CHARACTER DRAWING
+
+function drawCharacter(type) {
+
+  let hair, skin, outfit;
+
+  if (type === "main") {
+    hair = "#211b32";
+    skin = "#f1c2a5";
+    outfit = "#e990b6";
+  } 
+  else if (type === "mia") {
+    hair = "#75452f";
+    skin = "#edbd9d";
+    outfit = "#82a9d8";
+  } 
+  else {
+    hair = "#30243a";
+    skin = "#e9b894";
+    outfit = "#91a6ca";
+  }
+
+  // Girls have long hair. The boy has short hair.
+  let backHair;
+
+  if (type === "boy") {
+    backHair = `
+      <rect x="27" y="32" width="66" height="45" fill="${hair}"/>
+      <rect x="20" y="45" width="12" height="35" fill="${hair}"/>
+      <rect x="88" y="45" width="12" height="35" fill="${hair}"/>
+    `;
+  } else {
+    backHair = `
+      <rect x="20" y="38" width="80" height="125" fill="${hair}"/>
+      <rect x="12" y="55" width="15" height="90" fill="${hair}"/>
+      <rect x="93" y="55" width="15" height="90" fill="${hair}"/>
+    `;
+  }
+
+  return `
+  <svg viewBox="0 0 120 220"
+       xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Hair behind body -->
+    ${backHair}
+
+    <!-- Neck -->
+    <rect x="48" y="102" width="24" height="23"
+          fill="${skin}"/>
+
+    <!-- Face -->
+    <rect x="29" y="48" width="62" height="65"
+          fill="${skin}"/>
+
+    <!-- Ears -->
+    <rect x="23" y="72" width="8" height="18" fill="${skin}"/>
+    <rect x="89" y="72" width="8" height="18" fill="${skin}"/>
+
+    <!-- Hair fringe -->
+    <rect x="25" y="36" width="72" height="27" fill="${hair}"/>
+    <rect x="30" y="55" width="17" height="13" fill="${hair}"/>
+    <rect x="55" y="54" width="17" height="15" fill="${hair}"/>
+    <rect x="77" y="53" width="15" height="12" fill="${hair}"/>
+
+    <!-- Eyes -->
+    <rect x="42" y="78" width="7" height="9" fill="#30243f"/>
+    <rect x="70" y="78" width="7" height="9" fill="#30243f"/>
+
+    <!-- Eye highlights -->
+    <rect x="43" y="79" width="2" height="2" fill="white"/>
+    <rect x="71" y="79" width="2" height="2" fill="white"/>
+
+    <!-- Nose and mouth -->
+    <rect x="57" y="91" width="5" height="4" fill="#d99b89"/>
+    <rect x="53" y="101" width="14" height="3" fill="#a65f69"/>
+
+    <!-- Body -->
+    <rect x="25" y="123" width="70" height="62" fill="${outfit}"/>
+
+    <!-- Collar -->
+    <path d="M43 123 L60 145 L77 123" fill="#fff0df"/>
+
+    <!-- Arms -->
+    <rect x="13" y="127" width="13" height="49" fill="${skin}"/>
+    <rect x="94" y="127" width="13" height="49" fill="${skin}"/>
+
+    <!-- Sleeves -->
+    <rect x="13" y="125" width="13" height="20" fill="${outfit}"/>
+    <rect x="94" y="125" width="13" height="20" fill="${outfit}"/>
+
+    <!-- Legs -->
+    <rect x="36" y="185" width="20" height="24" fill="#554767"/>
+    <rect x="64" y="185" width="20" height="24" fill="#554767"/>
+
+    <!-- Shoes -->
+    <rect x="30" y="207" width="29" height="9" fill="#30243f"/>
+    <rect x="61" y="207" width="29" height="9" fill="#30243f"/>
+
+  </svg>`;
+}
+
+
+// LOCATION BACKGROUNDS
+
+function setLocation(place) {
+
+  const scene = document.getElementById("scene");
+  const objects = document.getElementById("backgroundObjects");
+  const label = document.getElementById("location");
+
+  scene.className = place;
+  label.textContent = place.toUpperCase();
+
+  if (place === "school") {
+    objects.innerHTML = `
+      <div id="sun"></div>
+      <div id="school">
+        <div id="roof"></div>
+        <div class="window left"></div>
+        <div class="window right"></div>
+        <div id="door"></div>
+      </div>`;
+  }
+
+  else if (place === "classroom") {
+    objects.innerHTML = `
+      <div style="position:absolute;top:35px;left:12%;width:76%;height:115px;background:#a1b7aa;border:6px solid #66516f">
+        <p style="color:white;font-size:18px">CLASSROOM</p>
+      </div>
+      <div style="position:absolute;bottom:35px;left:15%;width:70%;height:45px;background:#a77c61;border:5px solid #654d5a"></div>
+      <div style="position:absolute;top:170px;left:25%;width:50%;height:35px;background:#d2b38c"></div>`;
+  }
+
+  else if (place === "science") {
+    objects.innerHTML = `
+      <div style="position:absolute;top:35px;left:10%;width:80%;height:100px;background:#d3eee6;border:6px solid #668c91">
+        <p style="color:#476c73;font-size:18px">SCIENCE LAB</p>
+      </div>
+      <div style="position:absolute;bottom:35px;left:12%;width:76%;height:45px;background:#91a9ad;border:5px solid #536e79"></div>
+      <div style="position:absolute;top:145px;left:25%;font-size:30px;color:#557c87">⚗</div>
+      <div style="position:absolute;top:145px;right:25%;font-size:30px;color:#557c87">⚗</div>`;
+  }
+
+  else if (place === "art") {
+    objects.innerHTML = `
+      <div style="position:absolute;top:35px;left:10%;width:80%;height:110px;background:#f5dfd2;border:6px solid #986b83">
+        <p style="color:#986b83;font-size:18px">ART STUDIO</p>
+        <div style="font-size:35px">▧ ▤ ▧</div>
+      </div>
+      <div style="position:absolute;bottom:35px;left:15%;width:70%;height:40px;background:#b18a72;border:5px solid #76566a"></div>`;
+  }
+
+  else if (place === "sports") {
+    objects.innerHTML = `
+      <div style="position:absolute;top:45px;left:15%;width:70%;height:150px;border:5px solid white;border-bottom:0"></div>
+      <div style="position:absolute;top:45px;left:50%;height:150px;border-left:4px solid white"></div>
+      <div style="position:absolute;top:95px;left:20%;font-size:30px;color:white">BASKETBALL COURT</div>
+      <div style="position:absolute;top:15px;right:15%;width:45px;height:65px;border:5px solid #a75d42;border-radius:50%"></div>`;
+  }
+
+  else if (place === "council") {
+    objects.innerHTML = `
+      <div style="position:absolute;top:35px;left:12%;width:76%;height:105px;background:#e7d8ec;border:6px solid #756087">
+        <p style="color:#756087;font-size:18px">STUDENT COUNCIL</p>
+      </div>
+      <div style="position:absolute;bottom:35px;left:12%;width:76%;height:50px;background:#987d9e;border:5px solid #574263"></div>`;
+  }
+}
+
+
+// DISPLAY CHARACTERS
+
+function setCharacters(types, active) {
+
+  let area = document.getElementById("characters");
+  area.innerHTML = "";
+
+  types.forEach(type => {
+
+    let person = document.createElement("div");
+    person.className = "person";
+
+    if (type === active) {
+      person.classList.add("active");
+    }
+
+    person.innerHTML = drawCharacter(type);
+    area.appendChild(person);
+
+  });
+}
+
+
+// STORY
+
+let player = "Alex";
+
+const scenes = {
+
+intro: {
+  place: "school",
+  characters: ["main"],
+  active: "main",
+  speaker: "Narrator",
+  text: "Monday morning. Your first day at a new school. You walk through the gates, looking around. Everyone seems to already know each other.",
+  next: "name"
+},
+
+name: {
+  place: "school",
+  characters: ["main"],
+  active: "main",
+  speaker: "Narrator",
+  text: "Before we begin, what should we call you?",
+  input: true,
+  next: "arrival"
+},
+
+arrival: {
+  place: "classroom",
+  characters: ["main"],
+  active: "main",
+  speaker: "Narrator",
+  text: () => player + " walks into the classroom. A girl sitting near the window notices you.",
+  next: "mia"
+},
+
+mia: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "Hii! You're new, right? I'm Mia. You can sit here if you want!",
+  next: "reply"
+},
+
+reply: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "Oh, thank you! I'm still trying to figure out where everything is.",
+  next: "mia2"
+},
+
+mia2: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "Don't worry, you'll get used to it. Oh! Look at the activity board. There are so many clubs!",
+  next: "board"
+},
+
+board: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: "Narrator",
+  text: "You look at the board. Science club, art club, basketball, and student council. Two students nearby start talking.",
+  next: "boy"
+},
+
+boy: {
+  place: "classroom",
+  characters: ["main", "mia", "boy"],
+  active: "boy",
+  speaker: "Student",
+  text: "I'm joining basketball. Girls probably won't be able to keep up anyway.",
+  next: "mia3"
+},
+
+mia3: {
+  place: "classroom",
+  characters: ["main", "mia", "boy"],
+  active: "mia",
+  speaker: "Mia",
+  text: "Seriously? That's such a weird thing to say. Anyone can play basketball.",
+  next: "choice"
+},
+
+choice: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "What should I say?",
+  choices: [
+    ["Exactly! I might join too.", "support"],
+    ["Let's just ignore him.", "ignore"]
+  ]
+},
+
+support: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "Exactly! Being a girl doesn't mean I can't play sports.",
+  next: "club"
+},
+
+ignore: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "Let's just go. I don't want to argue on my first day.",
+  next: "club"
+},
+
+club: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "Anyway, which activity sounds interesting to you?",
+  choices: [
+    ["Science club", "science"],
+    ["Art club", "art"],
+    ["Basketball", "sports"],
+    ["Student council", "leadership"]
+  ]
+},
+
+science: {
+  place: "science",
+  characters: ["main", "boy"],
+  active: "boy",
+  speaker: "Student",
+  text: "You're joining science club? I thought girls usually preferred other activities.",
+  choices: [
+    ["Science is for everyone.", "scienceEnd"],
+    ["I don't need to explain my interests.", "scienceEnd"]
+  ]
+},
+
+scienceEnd: {
+  place: "science",
+  characters: ["main", "boy"],
+  active: "main",
+  speaker: () => player,
+  text: "I can enjoy whatever subject I want. Gender doesn't decide what I'm good at.",
+  next: "ending"
+},
+
+art: {
+  place: "art",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "I think I'll try art club. I love being creative.",
+  next: "art2"
+},
+
+art2: {
+  place: "art",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "That's cool! They're preparing a school showcase. Maybe we can join together!",
+  next: "art3"
+},
+
+art3: {
+  place: "art",
+  characters: ["main", "boy"],
+  active: "boy",
+  speaker: "Student",
+  text: "The boys are doing the lighting and sound. The girls can handle the decorations.",
+  choices: [
+    ["Why can't everyone try both?", "artEnd"],
+    ["People should choose their own roles.", "artEnd"]
+  ]
+},
+
+artEnd: {
+  place: "art",
+  characters: ["main", "boy"],
+  active: "main",
+  speaker: () => player,
+  text: "People should choose based on their interests, not their gender.",
+  next: "ending"
+},
+
+sports: {
+  place: "sports",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "I'm interested in basketball. I want to give it a try!",
+  next: "sports2"
+},
+
+sports2: {
+  place: "sports",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "Then you should! The coach is looking for new team members.",
+  next: "sports3"
+},
+
+sports3: {
+  place: "sports",
+  characters: ["main", "boy"],
+  active: "boy",
+  speaker: "Student",
+  text: "You? On the basketball team? Are you sure?",
+  choices: [
+    ["Why wouldn't I be?", "sportsEnd"],
+    ["I'll prove I can do it.", "sportsEnd"]
+  ]
+},
+
+sportsEnd: {
+  place: "sports",
+  characters: ["main", "boy"],
+  active: "main",
+  speaker: () => player,
+  text: "I deserve the same opportunity as everyone else. I'll decide what I can do!",
+  next: "ending"
+},
+
+leadership: {
+  place: "council",
+  characters: ["main", "mia"],
+  active: "main",
+  speaker: () => player,
+  text: "Student council sounds interesting. I'd like to help organise school events.",
+  next: "leader2"
+},
+
+leader2: {
+  place: "council",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "You should try! They're looking for people to join the team.",
+  next: "leader3"
+},
+
+leader3: {
+  place: "council",
+  characters: ["main", "boy"],
+  active: "boy",
+  speaker: "Student",
+  text: "Wouldn't a boy make a better leader, though?",
+  choices: [
+    ["Leadership isn't about gender.", "leaderEnd"],
+    ["I think I could do a good job.", "leaderEnd"]
+  ]
+},
+
+leaderEnd: {
+  place: "council",
+  characters: ["main", "boy"],
+  active: "main",
+  speaker: () => player,
+  text: "A good leader needs responsibility, ideas, and teamwork. Anyone can develop those skills.",
+  next: "ending"
+},
+
+ending: {
+  place: "classroom",
+  characters: ["main", "mia"],
+  active: "mia",
+  speaker: "Mia",
+  text: "I'm glad we talked about this. Everyone should get the chance to try what they love!",
+  next: "final"
+},
+
+final: {
+  place: "classroom",
+  characters: ["main"],
+  active: "main",
+  speaker: "Narrator",
+  text: () => "And so, " + player + "'s first day continues. You realise that equal opportunities don't happen by themselves. Sometimes, people need to challenge unfair assumptions. THE END.",
+  choices: [
+    ["PLAY AGAIN", "restart"]
+  ]
+}
+
+};
+
+
+// GAME ENGINE
+
+function startGame() {
+
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("scene").classList.remove("hidden");
+  document.getElementById("dialogue").classList.remove("hidden");
+
+  player = "Alex";
+  show("intro");
+}
+
+function credits() {
+  alert("Same Opportunities\nA game about SDG 5: Gender Equality.");
+}
+
+function show(id) {
+
+  if (id === "restart") {
+    player = "Alex";
+    show("intro");
+    return;
+  }
+
+  let scene = scenes[id];
+
+  setLocation(scene.place);
+  setCharacters(scene.characters, scene.active);
+
+  document.getElementById("speaker").innerText =
+    typeof scene.speaker === "function"
+      ? scene.speaker()
+      : scene.speaker;
+
+  document.getElementById("text").innerText =
+    typeof scene.text === "function"
+      ? scene.text()
+      : scene.text;
+
+  let area = document.getElementById("choices");
+  area.innerHTML = "";
+
+  if (scene.input) {
+
+    area.innerHTML =
+      "<input id='playerName' placeholder='Enter your name'>";
+
+    addButton("CONTINUE", () => {
+
+      player =
+        document.getElementById("playerName").value.trim() || "Alex";
+
+      show(scene.next);
+    });
+  }
+
+  else if (scene.choices) {
+
+    scene.choices.forEach(choice => {
+      addButton(choice[0], () => show(choice[1]));
+    });
+  }
+
+  else {
+    addButton("NEXT ➜", () => show(scene.next));
+  }
+}
+
+function addButton(label, action) {
+
+  let button = document.createElement("button");
+  button.innerText = label;
+  button.onclick = action;
+
+  document.getElementById("choices").appendChild(button);
+}
+
+</script>
+</body>
+</html>
